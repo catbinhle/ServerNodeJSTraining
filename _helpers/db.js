@@ -5,4 +5,5 @@ mongoose.connect(config.connectionString);
 mongoose.Promise = global.Promise;
 module.exports = {
     Home: require('../home/home.model'),
+    Client: require('../client/client.model')
 };
