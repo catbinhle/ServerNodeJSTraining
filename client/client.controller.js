@@ -4,6 +4,7 @@ const clientService = require('./client.services');
 
 router.post('/register', createClient);
 router.post('/login', authentication);
+router.post('/uploadAvatar/:id', clientService.uploadAvatar(), uploadAvatar);
 
 function createClient(req, res, next) {
     clientService.createClient(req.body)
@@ -21,5 +22,14 @@ function authentication(req, res, next) {
     );
 }
 
+function uploadAvatar(req, res, next) {
+    try {
+        clientService.updateClientID(req.params.id, {avatar: req?.file?.path})
+        .then(() => res.json({ message: 'Success', statusCode: 1 }))
+        .catch(err => next(err))
+    } catch (error)  {
+        res.status(400).send({ error: error.message })
+    }
+}
 
 module.exports = router;

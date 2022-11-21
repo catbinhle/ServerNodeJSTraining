@@ -2,18 +2,28 @@ const express = require('express');
 const router = express.Router();
 const homeService = require('./home.services');
 
-router.post('/postHome', postHome);
+router.post('/postHome', homeService.uploadMedias(), postHome);
 router.get('/getListHome', getHome);
 router.get('/:id', getHomeID);
 router.put('/updateHome/:id', updateHomeID);
 router.delete('/deleteHome/:id', deleteHomeID);
 
 function postHome(req, res, next) {
-    homeService.postHome(req.body)
-    .then(() => res.json({ message: 'Success', statusCode: 1 }))
-    .catch(err => {
-        next(err)}
-    );
+    try {
+        let newHome = {
+            title: req.body.title,
+            describe: req.body.describe,
+            images: req.files
+        } 
+        homeService.postHome(newHome)
+        .then(() => res.json({ message: 'Success', statusCode: 1 }))
+        .catch(err => {
+            next(err)}
+        );
+
+    } catch (error)  {
+        res.status(400).send({ error: error.message })
+    }
 }
 
 function getHome(req, res, next) {

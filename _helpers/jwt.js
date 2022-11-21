@@ -1,6 +1,7 @@
 const { expressjwt: jwt } = require("express-jwt")
+const jsonwebtoken = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 const config = require('../config.json');
-const clientService = require('../client/client.services');
 
 function jwToken() {
     return jwt({ secret: config.secret, algorithms: ["HS256"], isRevoked: isRevoked }).unless({ 
@@ -12,7 +13,25 @@ function jwToken() {
 }
 
 async function isRevoked(req, token) {
-    return token?.payload?.iat > token?.payload?.exp
+    let now = new Date().getTime() / 1000
+    return now.toFixed() > token?.payload?.exp
 };
 
-module.exports = jwToken;
+function createHash(password) {
+    return bcrypt.hashSync(password, 10);
+}
+
+function compareHash(password, hash) {
+    return bcrypt.compareSync(password, hash)
+}
+
+function createToken(id) {
+    return jsonwebtoken.sign({ sub: id }, config.secret, { expiresIn: '7d' });
+}
+
+module.exports = {
+    jwToken,
+    createHash,
+    compareHash,
+    createToken
+};

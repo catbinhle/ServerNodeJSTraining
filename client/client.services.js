@@ -1,7 +1,7 @@
 const db = require('../_helpers/db');
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
-const config = require('../config.json')
+const {createHash, compareHash, createToken} = require('../_helpers/jwt')
+const multer = require('multer')
+const fs = require('fs')
 const Client = db.Client
 
 async function createClient(param) {
@@ -14,7 +14,7 @@ async function createClient(param) {
 
     // hash password
     if (param.password) {
-        client.hash = bcrypt.hashSync(param.password, 10);
+        client.hash = createHash(param.password)
     }
 
     await client.save();
@@ -24,8 +24,8 @@ async function authentication(param) {
     
     const client = await Client.findOne({username: param.username }).exec()
     
-    if (client && bcrypt.compareSync(param?.password, client?.hash)) {
-        const token = jwt.sign({ sub: client.id }, config.secret, { expiresIn: '7d' });
+    if (client && compareHash(param.password, client.hash)) {
+        const token = createToken(client.id)
         
         return {
             ...client.toJSON(),
@@ -34,7 +34,36 @@ async function authentication(param) {
     }
 }
 
+async function updateClientID(id, param) {
+    let client = await Client.findById(id)
+
+    if (!client) throw `${id} not found`
+    if (param?.avatar && client?.avatar && param?.avatar !== client?.avatar) {
+        fs.unlinkSync(client?.avatar)
+    }
+
+    Object.assign(client, param) 
+
+    await client.save()
+}
+
+function uploadAvatar() {
+
+    const storage = multer.diskStorage({
+      destination: function (req, file, cb) {
+         cb(null, './avatars')
+      },
+      filename: function (req, file, cb) {
+         cb(null, file.originalname);
+      }
+    });
+  
+    return multer({ storage: storage }).single('avatar')
+}
+
 module.exports = {
     createClient,
-    authentication
+    authentication,
+    updateClientID,
+    uploadAvatar
 };
